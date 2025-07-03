@@ -1,0 +1,39 @@
+//Bottom Left Front
+@-0.5,-0.5,0,1,1,1,0,0
+//Bottom Right Front
+@0.5,-0.5,0,1,1,1,1,0
+//Top Right Front
+@0.5,0.5,0,1,1,1,1,1
+//Top Left Front
+@-0.5,0.5,0,1,1,1,0,1
+//Bottom Left Back
+@-0.5,-0.5,1,1,1,1,0,0
+//Bottom Right Back
+@0.5,-0.5,1,1,1,1,1,0
+//Top Right Back
+@0.5,0.5,1,1,1,1,1,1
+//Top Left Back
+@-0.5,0.5,1,1,1,1,0,1
+// Face Front
+$0,1,2
+$2,3,0
+// Face Back
+$4,5,6
+$6,7,4
+// Face Up
+$2,3,6
+$6,3,7
+// Face Down
+$0,1,4
+$1,4,5
+// Face Left
+$0,3,7
+$7,4,0
+// Face Right
+$1,2,6
+$6,5,1
+Texture =container.jpg
+VShader =VertColorTex_Spin.vs
+FShader =VertColorTex.fs
+
+
