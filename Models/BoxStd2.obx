@@ -33,7 +33,7 @@ $7,4,0
 $1,2,6
 $6,5,1
 Texture =container.jpg
-VShader =VertColorTex_Spin.vs
+VShader =VertColorTex.vs
 FShader =VertColorTex.fs
 
 

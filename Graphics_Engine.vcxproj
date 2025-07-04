@@ -139,13 +139,17 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ResourcePool.cpp" />
+    <ClCompile Include="Settings.cpp" />
+    <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Include\stb_image.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ResourcePool.h" />
+    <ClInclude Include="Settings.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
