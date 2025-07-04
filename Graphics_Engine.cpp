@@ -3,10 +3,6 @@
 #include <glfw3.h>
 #include <boost/filesystem.hpp>
 
-#include <glm/glm/glm.hpp>
-#include <glm/glm/gtc/matrix_transform.hpp>
-#include <glm/glm/gtc/type_ptr.hpp>
-
 #include "ResourcePool.h"
 #include "Model.h"
 #include "Camera.h"
@@ -102,7 +98,6 @@ int main()
 
 
     Camera camera;
-    Prespective perspective;
     glfwSetWindowUserPointer(window, &camera);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -110,14 +105,15 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glEnable(GL_DEPTH_TEST);
 
-	perspective.SetView(camera.Position, camera.Facing, camera.Up);
-
 	Model model("BoxStd2.obx");
-	model.Finalize();
+    model.SetPosition(0.0f, 0.0f, -2.0f);
 
-	int ModelUniformLocation = glGetUniformLocation(model.GetShaderProgram(), "model");
-	int ViewUniformLocation = glGetUniformLocation(model.GetShaderProgram(), "view");
-	int ProjectionUniformLocation = glGetUniformLocation(model.GetShaderProgram(), "projection");
+	Model LightBox("BoxStd2.obx");
+    LightBox.SetShaderFragment("light.fs");
+	LightBox.SetPosition(0.0f, 1.0f, -3.5f);
+
+	LightBox.Finalize();
+	model.Finalize();
 
 
     while (!glfwWindowShouldClose(window))
@@ -126,14 +122,31 @@ int main()
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+		glUseProgram(model.GetShaderProgram());
 
-        perspective.SetView(camera.Position, camera.Facing, camera.Up);
-        glUniformMatrix4fv(ModelUniformLocation, 1, GL_FALSE, glm::value_ptr(perspective.model));
-        glUniformMatrix4fv(ViewUniformLocation, 1, GL_FALSE, glm::value_ptr(perspective.view));
-        glUniformMatrix4fv(ProjectionUniformLocation, 1, GL_FALSE, glm::value_ptr(perspective.projection));
+		model.SetUniform4FV("model", glm::value_ptr(model.GetModel()));
+		model.SetUniform4FV("view", glm::value_ptr(model.GetView()));
+		model.SetUniform4FV("projection", glm::value_ptr(model.GetProjection()));
+		model.SetUniform3F("lightcolor", 0.5f, 0.5f, 0.5f);
 
+        model.SetView(camera.Position, camera.Facing, camera.Up);
+
+		glUseProgram(model.GetShaderProgram());
 		glBindVertexArray(model.GetVAO());
 		glDrawElements(GL_TRIANGLES, model.GetIndices().size(), GL_UNSIGNED_INT, 0);
+
+		glUseProgram(LightBox.GetShaderProgram());
+
+        LightBox.SetView(camera.Position, camera.Facing, camera.Up);
+
+		LightBox.SetUniform4FV("model", glm::value_ptr(LightBox.GetModel()));
+		LightBox.SetUniform4FV("view", glm::value_ptr(LightBox.GetView()));
+		LightBox.SetUniform4FV("projection", glm::value_ptr(LightBox.GetProjection()));
+        LightBox.SetUniform3F("lightcolor", 0.5f, 0.5f, 0.5f);
+
+        glBindVertexArray(LightBox.GetVAO());
+        glDrawElements(GL_TRIANGLES, LightBox.GetIndices().size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

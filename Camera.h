@@ -32,17 +32,4 @@ class Camera
 		}
 };
 
-class Prespective
-{
-	public:
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
-		glm::mat4 model = glm::mat4(1.0f);
-
-		void SetView(glm::vec3 position, glm::vec3 facing, glm::vec3 up)
-		{
-			view = glm::lookAt(position, position + facing, up);
-		}
-};
-
 #endif
