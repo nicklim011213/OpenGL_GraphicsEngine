@@ -5,7 +5,7 @@
 #include <stb_image.h>
 #include "ResourcePool.h"
 
-Model::Model(std::string FilePath)
+void ModelPopulator::ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawShaderData)
 {
 	auto RootPath = boost::filesystem::initial_path();
 	auto ModelPath = RootPath / "Models";
@@ -29,25 +29,34 @@ Model::Model(std::string FilePath)
 				float X = boost::lexical_cast<float>(parts[0]);
 				float Y = boost::lexical_cast<float>(parts[1]);
 				float Z = boost::lexical_cast<float>(parts[2]);
-				Vertices.push_back(X);
-				Vertices.push_back(Y);
-				Vertices.push_back(Z);
+				RawModelData.AddVertex(X);
+				RawModelData.AddVertex(Y);
+				RawModelData.AddVertex(Z);
 			}
 			if (parts.size() >= 5)
 			{
 				float Tex_X = boost::lexical_cast<float>(parts[3]);
 				float Tex_Y = boost::lexical_cast<float>(parts[4]);
-				Vertices.push_back(Tex_X);
-				Vertices.push_back(Tex_Y);
+				RawModelData.AddVertex(Tex_X);
+				RawModelData.AddVertex(Tex_Y);
 			}
 			if (parts.size() >= 8)
 			{
 				float R = boost::lexical_cast<float>(parts[5]);
 				float G = boost::lexical_cast<float>(parts[6]);
 				float B = boost::lexical_cast<float>(parts[7]);
-				Vertices.push_back(R);
-				Vertices.push_back(G);
-				Vertices.push_back(B);
+				RawModelData.AddVertex(R);
+				RawModelData.AddVertex(G);
+				RawModelData.AddVertex(B);
+			}
+			if (parts.size() >= 11)
+			{
+				float Xn = boost::lexical_cast<float>(parts[8]);
+				float Yn = boost::lexical_cast<float>(parts[9]);
+				float Zn = boost::lexical_cast<float>(parts[10]);
+				RawModelData.AddVertex(Xn);
+				RawModelData.AddVertex(Yn);
+				RawModelData.AddVertex(Zn);
 			}
 		}
 		else if (line[0] == '$')
@@ -58,25 +67,19 @@ Model::Model(std::string FilePath)
 			for (auto part : parts)
 			{
 				int Index = boost::lexical_cast<int>(part);
-				Indices.push_back(Index);
+				RawModelData.AddIndex(Index);
 			}
 		}
 		else if (boost::algorithm::contains(line, "VShader ="))
 		{
 			line = line.substr(9);
-			auto VShaderPath = RootPath / "Shaders";
-			VShaderPath /= line;
-			auto VshaderContents = FilePathToFileData(VShaderPath);
-			VertShader = VshaderContents;
+			RawShaderData.SetShaderVertex(line);
 
 		}
 		else if (boost::algorithm::contains(line, "FShader ="))
 		{
 			line = line.substr(9);
-			auto FShaderPath = RootPath / "Shaders";
-			FShaderPath /= line;
-			auto FShaderContents = FilePathToFileData(FShaderPath);
-			FragShader = FShaderContents;
+			RawShaderData.SetShaderFragment(line);
 		}
 		else if (boost::algorithm::contains(line, "Texture ="))
 		{
@@ -87,28 +90,18 @@ Model::Model(std::string FilePath)
 			{
 				int width, height, nrChannels;
 				unsigned char* data = stbi_load(TexturePath.string().c_str(), &width, &height, &nrChannels, 0);
-				TextureData Entry(data, width, height, nrChannels, (unsigned int)0);
+				TextureDataEntry Entry(data, width, height, nrChannels, (unsigned int)0);
 				glGenTextures(1, &Entry.TextureID);
 				glBindTexture(GL_TEXTURE_2D, Entry.TextureID);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-				TextureID = line;
+				RawShaderData.SetTextureID(line);
 				TexturePool[line] = Entry;
 			}
 		}
 	}
 }
 
-std::string Model::FilePathToFileData(const boost::filesystem::path& path)
-{
-	boost::filesystem::ifstream File(path.string());
-	std::stringstream FileStream;
-	FileStream << File.rdbuf();
-	std::string FileContents = FileStream.str();
-	File.close();
-	return FileContents;
-}
-
-void Model::Finalize()
+void RawModel::Finalize()
 {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -119,18 +112,23 @@ void Model::Finalize()
 	glBufferData(GL_ARRAY_BUFFER, Vertices.size() * sizeof(float), Vertices.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.size() * sizeof(unsigned int), Indices.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(5 * sizeof(float)));
 	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(8 * sizeof(float)));
+	glEnableVertexAttribArray(3);
 	glBindVertexArray(0);
 
 	this->VAO = VAO;
 	this->VBO = VBO;
 	this->EBO = EBO;
+}
 
+void Shader::FinishShaderSetup()
+{
 	const char* VertShaderSource = VertShader.c_str();
 	const char* FragShaderSource = FragShader.c_str();
 

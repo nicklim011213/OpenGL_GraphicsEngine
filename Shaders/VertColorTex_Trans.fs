@@ -9,6 +9,7 @@ in vec3 myFragPos;
 uniform sampler2D mytexture;
 uniform vec3 lightcolor;
 uniform vec3 lightPos;
+uniform float Trans;
 
 void main()
 {
@@ -22,5 +23,5 @@ void main()
 	
 	vec3 result = (ambientLight + diffuse) * myColor;
 	
-	FragColor = texture(mytexture, myTex) * vec4(result, 1.0);
+	FragColor = texture(mytexture, myTex) * vec4(result, Trans);
 }

@@ -1,37 +1,84 @@
 //Bottom Left Front
-@-0.5,-0.5,0,1,1,1,0,0
+@-0.5,-0.5,0,0,0,1,1,1,0,0,-1
 //Bottom Right Front
-@0.5,-0.5,0,1,1,1,1,0
+@0.5,-0.5,0,1,0,1,1,1,0,0,-1
 //Top Right Front
-@0.5,0.5,0,1,1,1,1,1
+@0.5,0.5,0,1,1,1,1,1,0,0,-1
 //Top Left Front
-@-0.5,0.5,0,1,1,1,0,1
-//Bottom Left Back
-@-0.5,-0.5,1,1,1,1,0,0
-//Bottom Right Back
-@0.5,-0.5,1,1,1,1,1,0
-//Top Right Back
-@0.5,0.5,1,1,1,1,1,1
-//Top Left Back
-@-0.5,0.5,1,1,1,1,0,1
-// Face Front
+@-0.5,0.5,0,0,1,1,1,1,0,0,-1
+
+// Face Back
 $0,1,2
 $2,3,0
-// Face Back
+
+
+//Bottom Left Back
+@-0.5,-0.5,1,0,0,1,1,1,0,0,1
+//Bottom Right Back
+@0.5,-0.5,1,1,0,1,1,1,0,0,1
+//Top Right Back
+@0.5,0.5,1,1,1,1,1,1,0,0,1
+//Top Left Back
+@-0.5,0.5,1,0,1,1,1,1,0,0,1
+
+// Face Front
 $4,5,6
 $6,7,4
-// Face Up
-$2,3,6
-$6,3,7
-// Face Down
-$0,1,4
-$1,4,5
+
+
+//Top Left Back - 8
+@-0.5,0.5,0,1,1,1,1,1,-1,0,0
+//Top Left Front - 9
+@-0.5,0.5,1,0,1,1,1,1,-1,0,0
+//Bottom Left Back - 10
+@-0.5,-0.5,0,1,0,1,1,1,-1,0,0
+//Bottom Left Front - 11
+@-0.5,-0.5,1,0,0,1,1,1,-1,0,0
+
 // Face Left
-$0,3,7
-$7,4,0
+$10,11,8
+$11,9,8
+
+//Top Right Back - 12
+@0.5,0.5,0,1,1,1,1,1,1,0,0
+//Top Right Front - 13
+@0.5,0.5,1,0,1,1,1,1,1,0,0
+//Bottom Right Back - 14
+@0.5,-0.5,0,1,0,1,1,1,1,0,0
+//Bottom Right Front - 15
+@0.5,-0.5,1,0,0,1,1,1,1,0,0
+
 // Face Right
-$1,2,6
-$6,5,1
+$15,14,13
+$14,12,13
+
+// Top Left Front - 16
+@-0.5,0.5,0,0,0,1,1,1,0,1,0
+// Top Right Front - 17
+@0.5,0.5,0,1,0,1,1,1,0,1,0
+// Top Right Back - 18
+@0.5,0.5,1,1,1,1,1,1,0,1,0
+// Top Left Back - 19
+@-0.5,0.5,1,0,1,1,1,1,0,1,0
+
+// Face Bottom
+$16,17,18
+$18,19,16
+
+// Bottom Left Front - 20
+@-0.5,-0.5,0,0,0,1,1,1,0,-1,0
+// Bottom Right Front - 21
+@0.5,-0.5,0,1,0,1,1,1,0,-1,0
+// Bottom Right Back - 22
+@0.5,-0.5,1,1,1,1,1,1,0,-1,0
+// Bottom Left Back - 23
+@-0.5,-0.5,1,0,1,1,1,1,0,-1,0
+
+// Face Top
+$20,21,22
+$22,23,20
+
+
 Texture =container.jpg
 VShader =VertColorTex.vs
 FShader =VertColorTex.fs

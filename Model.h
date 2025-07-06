@@ -16,34 +16,35 @@
 #include <glad.h>
 #include <glfw3.h>
 
+class Model;
+class Shader;
+class RawModel;
+class ModelPopulator;
 
-class Model
+inline std::string FilePathToFileData(const boost::filesystem::path& path)
+{
+	boost::filesystem::ifstream File(path.string());
+	std::stringstream FileStream;
+	FileStream << File.rdbuf();
+	std::string FileContents = FileStream.str();
+	File.close();
+	return FileContents;
+}
+
+class ModelPopulator
+{
+public:
+
+	void ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawShaderData);
+};
+
+class RawModel
 {
 	unsigned int VAO, VBO, EBO;
-	unsigned int shaderProgram;
-	std::string TextureID;
-
 	std::vector<float> Vertices;
 	std::vector<unsigned int> Indices;
 
-	std::string VertShader;
-	std::string FragShader;
-
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
-	glm::mat4 model = glm::mat4(1.0f);
-
 public:
-
-	Model(std::string FilePath);
-
-	void Finalize();
-
-	std::string FilePathToFileData(const boost::filesystem::path& path);
-
-	std::string GetTextureID() {
-		return TextureID;
-	}
 
 	int GetVertsize()
 	{
@@ -63,6 +64,28 @@ public:
 		return VAO;
 	}
 
+	void Finalize();
+
+	void AddVertex(float Value)
+	{
+		Vertices.push_back(Value);
+	}
+
+	void AddIndex(unsigned int Value)
+	{
+		Indices.push_back(Value);
+	}
+};
+
+class Shader
+{
+	std::string VertShader;
+	std::string FragShader;
+	unsigned int shaderProgram;
+	std::string TextureID;
+
+public:
+
 	int GetShaderProgram() {
 		return shaderProgram;
 	}
@@ -81,6 +104,50 @@ public:
 		FShaderPath /= name;
 		auto FShaderContents = FilePathToFileData(FShaderPath);
 		FragShader = FShaderContents;
+	}
+
+	std::string GetTextureID() {
+		return TextureID;
+	}
+
+	void SetTextureID(std::string ID) {
+		TextureID = ID;
+	}
+
+	void FinishShaderSetup();
+
+	void SetUniform4FV(std::string Location, const float* Value)
+	{
+		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
+		glUniformMatrix4fv(LocationID, 1, GL_FALSE, Value);
+	}
+
+	void SetUniform3F(std::string Location, float x, float y, float z)
+	{
+		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
+		glUniform3f(LocationID, x, y, z);
+	}
+};
+
+class Model
+{
+	Shader ModelShader;
+	RawModel ModelData;
+
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
+	glm::mat4 model = glm::mat4(1.0f);
+
+public:
+
+	Model(std::string FileName)
+	{
+		ModelPopulator InternalPopulator;
+		RawModel RawModelData;
+		Shader Shader;
+		InternalPopulator.ReadFile(FileName, RawModelData, Shader);
+		ModelData = RawModelData;
+		ModelShader = Shader;
 	}
 
 	void SetPosition(float x, float y, float z) {
@@ -107,17 +174,16 @@ public:
 		return model;
 	}
 
-	void SetUniform4FV(std::string Location, const float* Value)
+	Shader& GetShader()
 	{
-		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
-		glUniformMatrix4fv(LocationID, 1, GL_FALSE, Value);
+		return ModelShader;
 	}
 
-	void SetUniform3F(std::string Location, float x, float y, float z)
+	RawModel& GetRawModel()
 	{
-		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
-		glUniform3f(LocationID, x, y, z);
+		return ModelData;
 	}
 
 };
+
 #endif
