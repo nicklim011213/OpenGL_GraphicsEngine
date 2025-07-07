@@ -139,6 +139,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ResourcePool.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -147,6 +148,7 @@
     <ClInclude Include="Include\stb_image.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ResourcePool.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Utilities.h" />

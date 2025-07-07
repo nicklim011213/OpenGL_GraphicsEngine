@@ -127,6 +127,12 @@ public:
 		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
 		glUniform3f(LocationID, x, y, z);
 	}
+
+	void SetUniform3F(std::string Location, glm::vec3 Value)
+	{
+		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
+		glUniform3f(LocationID, Value.x, Value.y, Value.z);
+	}
 };
 
 class Model
