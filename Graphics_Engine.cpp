@@ -112,7 +112,6 @@ int main()
 
 	Model model("BoxStd2.obx");
     model.SetPosition(0.0f, 0.0f, -2.0f);
-	model.GetShader().SetShaderFragment("VertColorTex.fs");
 	scene.AddModel(model);
 
 	Model LightBox("BoxStd2.obx");
@@ -120,52 +119,34 @@ int main()
 	LightBox.SetPosition(3.0f, 0.0f, 1.0f);
 	scene.AddModel(LightBox);
 
-	LightBox.GetShader().FinishShaderSetup();
-	model.GetShader().FinishShaderSetup();
-    LightBox.GetRawModel().Finalize();
-	model.GetRawModel().Finalize();
+    scene.FinalizeScene();
 
+	scene.AddUniform("3F", new glm::vec3(1.0f, 0.0f, 1.0f), "lightcolor");
+	scene.AddUniform("3F", new glm::vec3(LightBox.GetModel()[3].x, LightBox.GetModel()[3].y, LightBox.GetModel()[3].z), "lightPos");
+	scene.AddUniform("4FV", new glm::mat4(model.GetProjection()), "projection");
 
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window, camera);
-
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(model.GetShader().GetShaderProgram());
+        processInput(window, camera);
 
-        float XOffset = 1.0f + sin(glfwGetTime()) + 2.0f;
-		float YOffset = sin(glfwGetTime() / 2.0f) * 1.0f;
+		for (auto& model : scene.GetModels())
+		{
+			model->GetShader().BindTexture();
 
-		model.GetShader().SetUniform4FV("model", glm::value_ptr(model.GetModel()));
-		model.GetShader().SetUniform4FV("view", glm::value_ptr(model.GetView()));
-		model.GetShader().SetUniform4FV("projection", glm::value_ptr(model.GetProjection()));
-		model.GetShader().SetUniform3F("lightcolor", 1.0f, 0.0f, 1.0f);
-		model.GetShader().SetUniform3F("lightPos", LightBox.GetModel()[3]);
-		model.GetShader().SetUniform3F("viewpos", camera.Position.x, camera.Position.y, camera.Position.z);
+            glUseProgram(model->GetShader().GetShaderProgram());
 
-        model.SetView(camera.Position, camera.Facing, camera.Up);
+			scene.SetSceneUniforms(model);
+			model->SetView(camera.Position, camera.Facing, camera.Up);
+            model->GetShader().SetUniform4FV("model", glm::value_ptr(model->GetModel()));
+            model->GetShader().SetUniform4FV("view", glm::value_ptr(model->GetView()));
+            model->GetShader().SetUniform3F("viewpos", camera.Position.x, camera.Position.y, camera.Position.z);
 
-		glBindVertexArray(model.GetRawModel().GetVAO());
-		glDrawElements(GL_TRIANGLES, model.GetRawModel().GetIndices().size(), GL_UNSIGNED_INT, 0);
-
-		glUseProgram(LightBox.GetShader().GetShaderProgram());
-
-        LightBox.SetView(camera.Position, camera.Facing, camera.Up);
-
-		LightBox.SetPosition(XOffset, YOffset, LightBox.GetModel()[3].z);
-
-		LightBox.GetShader().SetUniform4FV("model", glm::value_ptr(LightBox.GetModel()));
-		LightBox.GetShader().SetUniform4FV("view", glm::value_ptr(LightBox.GetView()));
-		LightBox.GetShader().SetUniform4FV("projection", glm::value_ptr(LightBox.GetProjection()));
-        LightBox.GetShader().SetUniform3F("lightcolor", 1.0f, 1.0f, 1.0f);
-		LightBox.GetShader().SetUniform3F("lightPos", LightBox.GetModel()[3]);
-        LightBox.GetShader().SetUniform3F("viewpos", camera.Position.x, camera.Position.y, camera.Position.z);
-
-        glBindVertexArray(LightBox.GetRawModel().GetVAO());
-        glDrawElements(GL_TRIANGLES, LightBox.GetRawModel().GetIndices().size(), GL_UNSIGNED_INT, 0);
-
+            glBindVertexArray(model->GetRawModel().GetVAO());
+            glDrawElements(GL_TRIANGLES, model->GetRawModel().GetIndices().size(), GL_UNSIGNED_INT, 0);
+		}
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

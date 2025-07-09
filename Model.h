@@ -133,6 +133,8 @@ public:
 		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
 		glUniform3f(LocationID, Value.x, Value.y, Value.z);
 	}
+
+	void BindTexture();
 };
 
 class Model

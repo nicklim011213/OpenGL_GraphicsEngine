@@ -139,7 +139,6 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ResourcePool.cpp" />
-    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>

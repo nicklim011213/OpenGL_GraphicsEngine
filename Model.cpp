@@ -146,13 +146,18 @@ void Shader::FinishShaderSetup()
 	glDeleteShader(fragmentShader);
 
 	this->shaderProgram = shaderProgram;
-	glUseProgram(shaderProgram);
+}
 
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+void Shader::BindTexture()
+{
+	if (this->GetTextureID() != "")
+	{
+		unsigned int texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
 
-	auto TextData = TexturePool[TextureID];
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TextData.Width, TextData.Height, 0, GL_RGB, GL_UNSIGNED_BYTE, TextData.RawData);
-	glGenerateMipmap(GL_TEXTURE_2D);
+		auto TextData = TexturePool[this->GetTextureID()];
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TextData.Width, TextData.Height, 0, GL_RGB, GL_UNSIGNED_BYTE, TextData.RawData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 }
