@@ -64,7 +64,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     direction.y = sin(glm::radians(cam->pitch));
     direction.z = sin(glm::radians(cam->yaw)) * cos(glm::radians(cam->pitch));
     cam->Facing = glm::normalize(direction);
-
 }
 
 int main()
@@ -97,33 +96,32 @@ int main()
 
     glViewport(0, 0, settings->SCREEN_WIDTH, settings->SCREEN_HEIGHT);
 
-
     Camera camera;
-    glfwSetWindowUserPointer(window, &camera);
 
+    Model model("BoxStd2.obx");
+    model.SetPosition(0.0f, 0.0f, -2.0f);
+    model.GetShader().BindTexture();
+
+    Model LightBox("BoxStd2.obx");
+    LightBox.GetShader().SetShaderFragment("light.fs");
+    LightBox.SetPosition(3.0f, 0.0f, 1.0f);
+
+    Scene scene;
+    scene.AddModel(LightBox);
+    scene.AddModel(model);
+    scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(1.0f, 0.0f, 1.0f), "lightcolor");
+    scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(LightBox.GetModelMatrix()[3]), "lightPos");
+    scene.AddGlobalUniform("4FV", std::make_shared<glm::mat4>(model.GetProjectionMatrix()), "projection");
+    scene.AddFrameUniforms("3F", std::make_shared<glm::vec3>(camera.Position.x, camera.Position.y, camera.Position.z), "viewpos");
+	scene.FinalizeAll();
+
+    glfwSetWindowUserPointer(window, &camera);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	Scene scene;
-
-	Model model("BoxStd2.obx");
-    model.SetPosition(0.0f, 0.0f, -2.0f);
-	scene.AddModel(model);
-
-	Model LightBox("BoxStd2.obx");
-    LightBox.GetShader().SetShaderFragment("light.fs");
-	LightBox.SetPosition(3.0f, 0.0f, 1.0f);
-	scene.AddModel(LightBox);
-
-    scene.FinalizeScene();
-
-	scene.AddUniform("3F", new glm::vec3(1.0f, 0.0f, 1.0f), "lightcolor");
-	scene.AddUniform("3F", new glm::vec3(LightBox.GetModel()[3].x, LightBox.GetModel()[3].y, LightBox.GetModel()[3].z), "lightPos");
-	scene.AddUniform("4FV", new glm::mat4(model.GetProjection()), "projection");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -132,17 +130,16 @@ int main()
 
         processInput(window, camera);
 
+        scene.RecalculateCamera(camera.Position);
+        scene.UpdateFrameUniforms();
+
 		for (auto& model : scene.GetModels())
 		{
-			model->GetShader().BindTexture();
-
             glUseProgram(model->GetShader().GetShaderProgram());
 
-			scene.SetSceneUniforms(model);
 			model->SetView(camera.Position, camera.Facing, camera.Up);
-            model->GetShader().SetUniform4FV("model", glm::value_ptr(model->GetModel()));
-            model->GetShader().SetUniform4FV("view", glm::value_ptr(model->GetView()));
-            model->GetShader().SetUniform3F("viewpos", camera.Position.x, camera.Position.y, camera.Position.z);
+            model->GetShader().SetUniform4FV("model", glm::value_ptr(model->GetModelMatrix()));
+            model->GetShader().SetUniform4FV("view", glm::value_ptr(model->GetViewMatrix()));
 
             glBindVertexArray(model->GetRawModel().GetVAO());
             glDrawElements(GL_TRIANGLES, model->GetRawModel().GetIndices().size(), GL_UNSIGNED_INT, 0);

@@ -7,10 +7,10 @@
 struct SceneUniform
 {
 	std::string type;
-	void* Value;
+	std::shared_ptr<void> Value;
 	std::string Location;
 
-	SceneUniform(std::string ty, void* Val, std::string Loc)
+	SceneUniform(std::string ty, std::shared_ptr<void> Val, std::string Loc)
 	{
 		type = ty;
 		Value = Val;
@@ -20,7 +20,8 @@ struct SceneUniform
 
 class Scene {
 	std::vector<Model*> SceneModels;
-	std::vector<SceneUniform> SceneUniforms;
+	std::vector<SceneUniform> GlobalSceneUniforms;
+	std::vector<SceneUniform> FrameSceneUniforms;
 
 public:
 
@@ -40,24 +41,79 @@ public:
 		}
 	}
 
-	void SetSceneUniforms(Model* model)
+	void SetGlobalSceneUniforms(Model* model)
 	{
-		for (auto& uniform : SceneUniforms) {
+		for (auto& uniform : GlobalSceneUniforms) {
 			if (uniform.type == "3F") {
-				glm::vec3* vecValue = static_cast<glm::vec3*>(uniform.Value);
-				model->GetShader().SetUniform3F(uniform.Location, *vecValue);
+				glm::vec3 vecValue = *std::static_pointer_cast<glm::vec3>(uniform.Value);
+				model->GetShader().SetUniform3F(uniform.Location, vecValue);
 			}
 			else if (uniform.type == "4FV")
 			{
-				glm::mat4* matValue = static_cast<glm::mat4*>(uniform.Value);
-				model->GetShader().SetUniform4FV(uniform.Location, glm::value_ptr(*matValue));
+				glm::mat4 matValue = *std::static_pointer_cast<glm::mat4>(uniform.Value);
+				model->GetShader().SetUniform4FV(uniform.Location, glm::value_ptr(matValue));
 			}
 		}
 	}
 
-	void AddUniform(std::string type, void* value, std::string location) {
+	void AddGlobalUniform(std::string type, std::shared_ptr<void> value, std::string location) {
 		SceneUniform uniform(type, value, location);
-		SceneUniforms.push_back(uniform);
+		GlobalSceneUniforms.push_back(uniform);
+	}
+
+	void FinalizeGlobalSceneUniforms()
+	{
+		for (auto& model : SceneModels)
+		{
+			glUseProgram(model->GetShader().GetShaderProgram());
+			this->SetGlobalSceneUniforms(model);
+		}
+	}
+
+	void AddFrameUniforms(std::string type, std::shared_ptr<void> value, std::string location)
+	{
+		SceneUniform uniform(type, value, location);
+		FrameSceneUniforms.push_back(uniform);
+	}
+
+	void UpdateFrameUniforms()
+	{
+		for (auto& Model : SceneModels) {
+
+			glUseProgram(Model->GetShader().GetShaderProgram());
+
+			for (auto& uniform : FrameSceneUniforms) {
+				if (uniform.type == "3F") {
+					glm::vec3 vecValue = *std::static_pointer_cast<glm::vec3>(uniform.Value);
+					Model->GetShader().SetUniform3F(uniform.Location, vecValue);
+				}
+				else if (uniform.type == "4FV")
+				{
+					glm::mat4 matValue = *std::static_pointer_cast<glm::mat4>(uniform.Value);
+					Model->GetShader().SetUniform4FV(uniform.Location, glm::value_ptr(matValue));
+				}
+			}
+		}
+	}
+
+	void RecalculateCamera(const glm::vec3& cameraPosition)
+	{
+		for (auto& uniform : FrameSceneUniforms)
+		{
+			if (uniform.type == "3F" && uniform.Location == "viewpos")
+			{
+				auto vecPtr = std::static_pointer_cast<glm::vec3>(uniform.Value);
+				*vecPtr = cameraPosition;
+			}
+			// add other uniforms as needed, or leave them alone here
+		}
+	}
+
+	void FinalizeAll()
+	{
+		FinalizeScene();
+		FinalizeGlobalSceneUniforms();
+		UpdateFrameUniforms();
 	}
 };
 #endif

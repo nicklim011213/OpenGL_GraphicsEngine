@@ -5,7 +5,7 @@
 #include <stb_image.h>
 #include "ResourcePool.h"
 
-void ModelPopulator::ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawShaderData)
+void Model::ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawShaderData)
 {
 	auto RootPath = boost::filesystem::initial_path();
 	auto ModelPath = RootPath / "Models";
@@ -24,39 +24,49 @@ void ModelPopulator::ReadFile(std::string FilePath, RawModel& RawModelData, Shad
 			line = line.substr(1);
 			std::vector<std::string> parts;
 			boost::algorithm::split(parts, line, boost::is_any_of(","));
-			if (parts.size() >= 3)
+			std::vector<float> Temp;
+
+			switch (parts.size())
 			{
-				float X = boost::lexical_cast<float>(parts[0]);
-				float Y = boost::lexical_cast<float>(parts[1]);
-				float Z = boost::lexical_cast<float>(parts[2]);
-				RawModelData.AddVertex(X);
-				RawModelData.AddVertex(Y);
-				RawModelData.AddVertex(Z);
+				case 11:
+				{
+					float Xn = boost::lexical_cast<float>(parts[8]);
+					float Yn = boost::lexical_cast<float>(parts[9]);
+					float Zn = boost::lexical_cast<float>(parts[10]);
+					Temp.push_back(Xn);
+					Temp.push_back(Yn);
+					Temp.push_back(Zn);
+				}
+				case 8:
+				{
+					float R = boost::lexical_cast<float>(parts[5]);
+					float G = boost::lexical_cast<float>(parts[6]);
+					float B = boost::lexical_cast<float>(parts[7]);
+					Temp.push_back(R);
+					Temp.push_back(G);
+					Temp.push_back(B);
+				}
+				case 5:
+				{
+					float Tex_Y = boost::lexical_cast<float>(parts[4]);
+					float Tex_X = boost::lexical_cast<float>(parts[3]);
+					Temp.push_back(Tex_Y);
+					Temp.push_back(Tex_X);
+				}
+				case 3:
+				{
+					float X = boost::lexical_cast<float>(parts[0]);
+					float Y = boost::lexical_cast<float>(parts[1]);
+					float Z = boost::lexical_cast<float>(parts[2]);
+					Temp.push_back(X);
+					Temp.push_back(Y);
+					Temp.push_back(Z);
+					break;
+				}
 			}
-			if (parts.size() >= 5)
+			for (int index = Temp.size() - 1; index >= 0; --index)
 			{
-				float Tex_X = boost::lexical_cast<float>(parts[3]);
-				float Tex_Y = boost::lexical_cast<float>(parts[4]);
-				RawModelData.AddVertex(Tex_X);
-				RawModelData.AddVertex(Tex_Y);
-			}
-			if (parts.size() >= 8)
-			{
-				float R = boost::lexical_cast<float>(parts[5]);
-				float G = boost::lexical_cast<float>(parts[6]);
-				float B = boost::lexical_cast<float>(parts[7]);
-				RawModelData.AddVertex(R);
-				RawModelData.AddVertex(G);
-				RawModelData.AddVertex(B);
-			}
-			if (parts.size() >= 11)
-			{
-				float Xn = boost::lexical_cast<float>(parts[8]);
-				float Yn = boost::lexical_cast<float>(parts[9]);
-				float Zn = boost::lexical_cast<float>(parts[10]);
-				RawModelData.AddVertex(Xn);
-				RawModelData.AddVertex(Yn);
-				RawModelData.AddVertex(Zn);
+				RawModelData.AddVertex(Temp[index]);
 			}
 		}
 		else if (line[0] == '$')
@@ -86,18 +96,20 @@ void ModelPopulator::ReadFile(std::string FilePath, RawModel& RawModelData, Shad
 			line = line.substr(9);
 			auto TexturePath = RootPath / "Textures";
 			TexturePath /= line;
-			if (TexturePool.find(line) == TexturePool.end())
-			{
-				int width, height, nrChannels;
-				unsigned char* data = stbi_load(TexturePath.string().c_str(), &width, &height, &nrChannels, 0);
-				TextureDataEntry Entry(data, width, height, nrChannels, (unsigned int)0);
-				glGenTextures(1, &Entry.TextureID);
-				glBindTexture(GL_TEXTURE_2D, Entry.TextureID);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-				RawShaderData.SetTextureID(line);
-				TexturePool[line] = Entry;
-			}
+			AddTextureEntry(line, TexturePath);
+			RawShaderData.SetTextureID(line);
 		}
+	}
+}
+
+void Model::AddTextureEntry(std::string Name, boost::filesystem::path TexturePath)
+{
+	if (TexturePool.find(Name) == TexturePool.end())
+	{
+		int width, height, nrChannels;
+		unsigned char* data = stbi_load(TexturePath.string().c_str(), &width, &height, &nrChannels, 0);
+		TextureDataEntry Entry(data, width, height, nrChannels, (unsigned int)0);
+		TexturePool[Name] = Entry;
 	}
 }
 
@@ -146,18 +158,4 @@ void Shader::FinishShaderSetup()
 	glDeleteShader(fragmentShader);
 
 	this->shaderProgram = shaderProgram;
-}
-
-void Shader::BindTexture()
-{
-	if (this->GetTextureID() != "")
-	{
-		unsigned int texture;
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-
-		auto TextData = TexturePool[this->GetTextureID()];
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TextData.Width, TextData.Height, 0, GL_RGB, GL_UNSIGNED_BYTE, TextData.RawData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
 }
