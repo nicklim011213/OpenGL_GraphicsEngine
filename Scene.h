@@ -36,7 +36,6 @@ public:
 	void FinalizeScene()
 	{
 		for (auto& model : SceneModels) {
-			model->GetShader().FinishShaderSetup();
 			model->GetRawModel().Finalize();
 		}
 	}
@@ -46,12 +45,12 @@ public:
 		for (auto& uniform : GlobalSceneUniforms) {
 			if (uniform.type == "3F") {
 				glm::vec3 vecValue = *std::static_pointer_cast<glm::vec3>(uniform.Value);
-				model->GetShader().SetUniform3F(uniform.Location, vecValue);
+				model->GetShaderProgram()->SetUniform3F(uniform.Location, vecValue);
 			}
 			else if (uniform.type == "4FV")
 			{
 				glm::mat4 matValue = *std::static_pointer_cast<glm::mat4>(uniform.Value);
-				model->GetShader().SetUniform4FV(uniform.Location, glm::value_ptr(matValue));
+				model->GetShaderProgram()->SetUniform4FV(uniform.Location, glm::value_ptr(matValue));
 			}
 		}
 	}
@@ -65,7 +64,7 @@ public:
 	{
 		for (auto& model : SceneModels)
 		{
-			glUseProgram(model->GetShader().GetShaderProgram());
+			glUseProgram(model->GetShaderProgram()->GetProgramID());
 			this->SetGlobalSceneUniforms(model);
 		}
 	}
@@ -80,17 +79,17 @@ public:
 	{
 		for (auto& Model : SceneModels) {
 
-			glUseProgram(Model->GetShader().GetShaderProgram());
+			glUseProgram(Model->GetShaderProgram()->GetProgramID());
 
 			for (auto& uniform : FrameSceneUniforms) {
 				if (uniform.type == "3F") {
 					glm::vec3 vecValue = *std::static_pointer_cast<glm::vec3>(uniform.Value);
-					Model->GetShader().SetUniform3F(uniform.Location, vecValue);
+					Model->GetShaderProgram()->SetUniform3F(uniform.Location, vecValue);
 				}
 				else if (uniform.type == "4FV")
 				{
 					glm::mat4 matValue = *std::static_pointer_cast<glm::mat4>(uniform.Value);
-					Model->GetShader().SetUniform4FV(uniform.Location, glm::value_ptr(matValue));
+					Model->GetShaderProgram()->SetUniform4FV(uniform.Location, glm::value_ptr(matValue));
 				}
 			}
 		}

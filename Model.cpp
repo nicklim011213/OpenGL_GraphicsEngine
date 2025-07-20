@@ -1,11 +1,8 @@
 #include "Model.h"
 #include <glad.h>
 #include <glfw3.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include "ResourcePool.h"
 
-void Model::ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawShaderData)
+void Model::ReadFile(std::string FilePath, RawModel& RawModelData)
 {
 	auto RootPath = boost::filesystem::initial_path();
 	auto ModelPath = RootPath / "Models";
@@ -80,36 +77,6 @@ void Model::ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawSh
 				RawModelData.AddIndex(Index);
 			}
 		}
-		else if (boost::algorithm::contains(line, "VShader ="))
-		{
-			line = line.substr(9);
-			RawShaderData.SetShaderVertex(line);
-
-		}
-		else if (boost::algorithm::contains(line, "FShader ="))
-		{
-			line = line.substr(9);
-			RawShaderData.SetShaderFragment(line);
-		}
-		else if (boost::algorithm::contains(line, "Texture ="))
-		{
-			line = line.substr(9);
-			auto TexturePath = RootPath / "Textures";
-			TexturePath /= line;
-			AddTextureEntry(line, TexturePath);
-			RawShaderData.SetTextureID(line);
-		}
-	}
-}
-
-void Model::AddTextureEntry(std::string Name, boost::filesystem::path TexturePath)
-{
-	if (TexturePool.find(Name) == TexturePool.end())
-	{
-		int width, height, nrChannels;
-		unsigned char* data = stbi_load(TexturePath.string().c_str(), &width, &height, &nrChannels, 0);
-		TextureDataEntry Entry(data, width, height, nrChannels, (unsigned int)0);
-		TexturePool[Name] = Entry;
 	}
 }
 
@@ -137,25 +104,4 @@ void RawModel::Finalize()
 	this->VAO = VAO;
 	this->VBO = VBO;
 	this->EBO = EBO;
-}
-
-void Shader::FinishShaderSetup()
-{
-	const char* VertShaderSource = VertShader.c_str();
-	const char* FragShaderSource = FragShader.c_str();
-
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &VertShaderSource, NULL);
-	glCompileShader(vertexShader);
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &FragShaderSource, NULL);
-	glCompileShader(fragmentShader);
-	unsigned int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	this->shaderProgram = shaderProgram;
 }

@@ -19,9 +19,7 @@
 #include "ResourcePool.h"
 
 class Model;
-class Shader;
 class RawModel;
-class ModelPopulator;
 
 inline std::string FilePathToFileData(const boost::filesystem::path& path)
 {
@@ -72,82 +70,11 @@ public:
 	}
 };
 
-class Shader
-{
-	std::string VertShader;
-	std::string FragShader;
-	unsigned int shaderProgram;
-	std::string TextureID;
-
-public:
-
-	inline int GetShaderProgram() {
-		return shaderProgram;
-	}
-
-	inline void SetShaderVertex(std::string name) {
-		auto VShaderPath = boost::filesystem::initial_path();
-		VShaderPath /= "Shaders";
-		VShaderPath /= name;
-		auto VshaderContents = FilePathToFileData(VShaderPath);
-		VertShader = VshaderContents;
-	}
-
-	inline void SetShaderFragment(std::string name) {
-		auto FShaderPath = boost::filesystem::initial_path();
-		FShaderPath /= "Shaders";
-		FShaderPath /= name;
-		auto FShaderContents = FilePathToFileData(FShaderPath);
-		FragShader = FShaderContents;
-	}
-
-	inline std::string GetTextureID() {
-		return TextureID;
-	}
-
-	inline void SetTextureID(std::string ID) {
-		TextureID = ID;
-	}
-
-	void FinishShaderSetup();
-
-	inline void SetUniform4FV(std::string Location, const float* Value)
-	{
-		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
-		glUniformMatrix4fv(LocationID, 1, GL_FALSE, Value);
-	}
-
-	inline void SetUniform3F(std::string Location, float x, float y, float z)
-	{
-		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
-		glUniform3f(LocationID, x, y, z);
-	}
-
-	inline void SetUniform3F(std::string Location, glm::vec3 Value)
-	{
-		int LocationID = glGetUniformLocation(shaderProgram, Location.c_str());
-		glUniform3f(LocationID, Value.x, Value.y, Value.z);
-	}
-
-	inline void BindTexture()
-	{
-		if (this->GetTextureID() != "")
-		{
-			unsigned int texture;
-			glGenTextures(1, &texture);
-			glBindTexture(GL_TEXTURE_2D, texture);
-
-			auto TextData = TexturePool[this->GetTextureID()];
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TextData.Width, TextData.Height, 0, GL_RGB, GL_UNSIGNED_BYTE, TextData.RawData);
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
-	}
-};
-
 class Model
 {
-	Shader ModelShader;
+	std::shared_ptr<ShaderProgram> ModelShader;
 	RawModel ModelData;
+	std::string Texture;
 
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
@@ -158,10 +85,8 @@ public:
 	inline Model(std::string FileName)
 	{
 		RawModel RawModelData;
-		Shader Shader;
-		ReadFile(FileName, RawModelData, Shader);
+		ReadFile(FileName, RawModelData);
 		ModelData = RawModelData;
-		ModelShader = Shader;
 	}
 
 	inline void SetPosition(float x, float y, float z) {
@@ -188,20 +113,43 @@ public:
 		return model;
 	}
 
-	inline Shader& GetShader()
-	{
-		return ModelShader;
-	}
-
 	inline RawModel& GetRawModel()
 	{
 		return ModelData;
 	}
 
-	void ReadFile(std::string FilePath, RawModel& RawModelData, Shader& RawShaderData);
+	void ReadFile(std::string FilePath, RawModel& RawModelData);
 
-	void AddTextureEntry(std::string Name, boost::filesystem::path TexturePath);
+	inline std::shared_ptr<ShaderProgram> GetShaderProgram()
+	{
+		return ModelShader;
+	}
 
+	inline void SetShaderProgram(std::shared_ptr<ShaderProgram> Shader)
+	{
+		ModelShader = Shader;
+	}
+
+	inline void BindTextures()
+	{
+		if (TexturePool.find(Texture) != TexturePool.end())
+		{
+			TexturePool[Texture]->Bind();
+		}
+		else if (Texture.empty())
+		{
+			// Ignored.
+		}
+		else
+		{
+			std::cerr << "Texture not found in pool: " << Texture << std::endl;
+		}
+	}
+
+	inline void SetTexture(std::string TextureName)
+	{
+		Texture = TextureName;
+	}
 };
 
 #endif

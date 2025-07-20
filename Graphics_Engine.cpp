@@ -3,7 +3,7 @@
 #include <glfw3.h>
 #include <boost/filesystem.hpp>
 
-#include "ResourcePool.h"
+#define STB_IMAGE_IMPLEMENTATION
 #include "Model.h"
 #include "Camera.h"
 #include "Settings.h"
@@ -98,13 +98,23 @@ int main()
 
     Camera camera;
 
+	ShaderBuilder shaderBuilder;
+	auto VertexShader = shaderBuilder.BuildVertexShader(boost::filesystem::initial_path() / "Shaders" / "VertColorTex.vs", "Vertex");
+	auto FragmentShader = shaderBuilder.BuildFragmentShader(boost::filesystem::initial_path() / "Shaders" / "VertColorTex.fs", "Fragment");
+	auto CrateShaderProgram = shaderBuilder.BuildShaderProgram(VertexShader, FragmentShader, "CrateProgram");
+	auto LightFragShader = shaderBuilder.BuildFragmentShader(boost::filesystem::initial_path() / "Shaders" / "light.fs", "LightFragment");
+	auto LightShaderProgram = shaderBuilder.BuildShaderProgram(VertexShader, LightFragShader, "LightProgram");
+    auto CrateTexture = shaderBuilder.BuildTexture(boost::filesystem::initial_path() / "Textures" / "container.jpg", "CrateTexture");
+
+
     Model model("BoxStd2.obx");
     model.SetPosition(0.0f, 0.0f, -2.0f);
-    model.GetShader().BindTexture();
+	model.SetShaderProgram(ShaderProgramPool["CrateProgram"]);
+	model.SetTexture("CrateTexture");
 
     Model LightBox("BoxStd2.obx");
-    LightBox.GetShader().SetShaderFragment("light.fs");
     LightBox.SetPosition(3.0f, 0.0f, 1.0f);
+	LightBox.SetShaderProgram(ShaderProgramPool["LightProgram"]);
 
     Scene scene;
     scene.AddModel(LightBox);
@@ -135,11 +145,13 @@ int main()
 
 		for (auto& model : scene.GetModels())
 		{
-            glUseProgram(model->GetShader().GetShaderProgram());
+            glUseProgram(model->GetShaderProgram()->GetProgramID());
+
+			model->BindTextures();
 
 			model->SetView(camera.Position, camera.Facing, camera.Up);
-            model->GetShader().SetUniform4FV("model", glm::value_ptr(model->GetModelMatrix()));
-            model->GetShader().SetUniform4FV("view", glm::value_ptr(model->GetViewMatrix()));
+            model->GetShaderProgram()->SetUniform4FV("model", glm::value_ptr(model->GetModelMatrix()));
+            model->GetShaderProgram()->SetUniform4FV("view", glm::value_ptr(model->GetViewMatrix()));
 
             glBindVertexArray(model->GetRawModel().GetVAO());
             glDrawElements(GL_TRIANGLES, model->GetRawModel().GetIndices().size(), GL_UNSIGNED_INT, 0);
