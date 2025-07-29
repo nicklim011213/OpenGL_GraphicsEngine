@@ -74,6 +74,20 @@ class VertexShader
 		auto ShaderSource = ShaderCode.c_str();
 		glShaderSource(VertexShaderLocation, 1, &ShaderSource, NULL);
 		glCompileShader(VertexShaderLocation);
+		ErrorCheck();
+	}
+
+	void ErrorCheck()
+	{
+		int  success;
+		char infoLog[512];
+		glGetShaderiv(VertexShaderLocation, GL_COMPILE_STATUS, &success);
+
+		if (!success)
+		{
+			glGetShaderInfoLog(VertexShaderLocation, 512, NULL, infoLog);
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		}
 	}
 
 public:
@@ -114,6 +128,20 @@ class FragmentShader
 		auto ShaderSource = ShaderCode.c_str();
 		glShaderSource(FragmentShaderLocation, 1, &ShaderSource, NULL);
 		glCompileShader(FragmentShaderLocation);
+		ErrorCheck();
+	}
+
+	void ErrorCheck()
+	{
+		int  success;
+		char infoLog[512];
+		glGetShaderiv(FragmentShaderLocation, GL_COMPILE_STATUS, &success);
+
+		if (!success)
+		{
+			glGetShaderInfoLog(FragmentShaderLocation, 512, NULL, infoLog);
+			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		}
 	}
 
 public:
@@ -155,6 +183,18 @@ class ShaderProgram
 		glAttachShader(ProgramID, InternalVertShsader->GetShaderLocation());
 		glAttachShader(ProgramID, InternalFragShader->GetShaderLocation());
 		glLinkProgram(ProgramID);
+		ErrorCheck();
+	}
+
+	void ErrorCheck()
+	{
+		int  success;
+		char infoLog[512];
+		glGetProgramiv(ProgramID, GL_LINK_STATUS, &success);
+		if (!success) {
+			glGetProgramInfoLog(ProgramID, 512, NULL, infoLog);
+			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+		}
 	}
 
 public:
@@ -195,6 +235,12 @@ public:
 	{
 		int LocationID = glGetUniformLocation(ProgramID, Location.c_str());
 		glUniform3f(LocationID, Value.x, Value.y, Value.z);
+	}
+
+	inline void SetUniform1F(std::string Location, float Value)
+	{
+		int LocationID = glGetUniformLocation(ProgramID, Location.c_str());
+		glUniform1f(LocationID, Value);
 	}
 
 	inline int GetProgramID() const
@@ -250,6 +296,16 @@ class Material
 	glm::vec3 Diffuse;
 	glm::vec3 Specular;
 	float Shininess;
+
+public:
+
+	Material(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess)
+		: Ambient(ambient), Diffuse(diffuse), Specular(specular), Shininess(shininess)
+	{
+
+	}
 };
+
+extern std::unordered_map<std::string, std::shared_ptr<Material>> MaterialPool;
 
 #endif

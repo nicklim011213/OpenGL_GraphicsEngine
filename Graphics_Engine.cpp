@@ -98,13 +98,23 @@ int main()
 
     Camera camera;
 
+	// Shader Setup. each takes a path and a name. The name is the key for the shader hashmaps.
 	ShaderBuilder shaderBuilder;
 	auto VertexShader = shaderBuilder.BuildVertexShader(boost::filesystem::initial_path() / "Shaders" / "VertColorTex.vs", "Vertex");
 	auto FragmentShader = shaderBuilder.BuildFragmentShader(boost::filesystem::initial_path() / "Shaders" / "VertColorTex.fs", "Fragment");
 	auto CrateShaderProgram = shaderBuilder.BuildShaderProgram(VertexShader, FragmentShader, "CrateProgram");
+
+	glUseProgram(CrateShaderProgram->GetProgramID());
+    CrateShaderProgram->SetUniform3F("mat.ambient", glm::vec3(0.2125f, 0.1275f, 0.054f));
+    CrateShaderProgram->SetUniform3F("mat.diffuse", glm::vec3(0.714f, 0.4284f, 0.18144f));
+    CrateShaderProgram->SetUniform3F("mat.specular", glm::vec3(0.393548f, 0.271906f, 0.166721f));
+    CrateShaderProgram->SetUniform1F("mat.shininess", 0.2f);
+
+
 	auto LightFragShader = shaderBuilder.BuildFragmentShader(boost::filesystem::initial_path() / "Shaders" / "light.fs", "LightFragment");
 	auto LightShaderProgram = shaderBuilder.BuildShaderProgram(VertexShader, LightFragShader, "LightProgram");
     auto CrateTexture = shaderBuilder.BuildTexture(boost::filesystem::initial_path() / "Textures" / "container.jpg", "CrateTexture");
+    // End of Shader Setup
 
 
     Model model("BoxStd2.obx");
@@ -122,6 +132,9 @@ int main()
     scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(1.0f, 0.0f, 1.0f), "lightcolor");
     scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(LightBox.GetModelMatrix()[3]), "lightPos");
     scene.AddGlobalUniform("4FV", std::make_shared<glm::mat4>(model.GetProjectionMatrix()), "projection");
+	scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(0.2f, 0.2f, 0.2f), "light.ambient");
+	scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(0.5f, 0.5f, 0.5f), "light.diffuse");
+	scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(1.0f, 1.0f, 1.0f), "light.specular");
     scene.AddFrameUniforms("3F", std::make_shared<glm::vec3>(camera.Position.x, camera.Position.y, camera.Position.z), "viewpos");
 	scene.FinalizeAll();
 
@@ -135,7 +148,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.02f, 0.02f, 0.02f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         processInput(window, camera);

@@ -104,7 +104,6 @@ public:
 				auto vecPtr = std::static_pointer_cast<glm::vec3>(uniform.Value);
 				*vecPtr = cameraPosition;
 			}
-			// add other uniforms as needed, or leave them alone here
 		}
 	}
 
