@@ -33,27 +33,27 @@ inline std::string FilePathToFileData(const boost::filesystem::path& path)
 
 class RawModel
 {
-	unsigned int VAO, VBO, EBO;
+	unsigned int VAO = 0, VBO = 0, EBO = 0;
 	std::vector<float> Vertices;
 	std::vector<unsigned int> Indices;
 
 public:
 
-	inline int GetVertsize()
+	inline size_t GetVertsize() const
 	{
 		return Vertices.size() / 8;
 	}
 
-	inline int GetTriangles()
+	inline size_t GetTriangles() const
 	{
 		return Indices.size() / 3;
 	}
 
-	inline std::vector<unsigned int> GetIndices() {
+	inline std::vector<unsigned int> GetIndices() const {
 		return Indices;
 	}
 
-	inline int GetVAO() {
+	inline int GetVAO() const {
 		return VAO;
 	}
 
@@ -74,7 +74,7 @@ class Model
 {
 	std::shared_ptr<ShaderProgram> ModelShader;
 	RawModel ModelData;
-	std::string Texture;
+	std::vector<std::string> Texture;
 
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
@@ -132,23 +132,26 @@ public:
 
 	inline void BindTextures()
 	{
-		if (TexturePool.find(Texture) != TexturePool.end())
+		for (int i = 0; i != Texture.size(); ++i)
 		{
-			TexturePool[Texture]->Bind();
-		}
-		else if (Texture.empty())
-		{
-			// Ignored.
-		}
-		else
-		{
-			std::cerr << "Texture not found in pool: " << Texture << std::endl;
+			if (TexturePool.find(Texture[i]) != TexturePool.end())
+			{
+				TexturePool[Texture[i]]->Bind(i);
+			}
+			else if (Texture.empty())
+			{
+				// Ignored.
+			}
+			else
+			{
+				std::cerr << "Texture not found in pool: " << Texture[i] << std::endl;
+			}
 		}
 	}
 
 	inline void SetTexture(std::string TextureName)
 	{
-		Texture = TextureName;
+		Texture.push_back(TextureName);
 	}
 };
 

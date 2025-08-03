@@ -10,14 +10,14 @@
 #include "Utilities.h"
 #include "Scene.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 	auto Settings = Settings::GetInstance();
 	Settings->SetScreenSize(width, height);
 }
 
-void processInput(GLFWwindow* window, Camera& camera)
+static void processInput(GLFWwindow* window, Camera& camera)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -32,7 +32,7 @@ void processInput(GLFWwindow* window, Camera& camera)
         camera.Position += glm::normalize(glm::cross(camera.Facing, camera.Up)) * cameraSpeed;
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     Camera* cam = static_cast<Camera*>(glfwGetWindowUserPointer(window));
     if (cam->FirstMouse)
@@ -105,15 +105,15 @@ int main()
 	auto CrateShaderProgram = shaderBuilder.BuildShaderProgram(VertexShader, FragmentShader, "CrateProgram");
 
 	glUseProgram(CrateShaderProgram->GetProgramID());
-    CrateShaderProgram->SetUniform3F("mat.ambient", glm::vec3(0.2125f, 0.1275f, 0.054f));
-    CrateShaderProgram->SetUniform3F("mat.diffuse", glm::vec3(0.714f, 0.4284f, 0.18144f));
-    CrateShaderProgram->SetUniform3F("mat.specular", glm::vec3(0.393548f, 0.271906f, 0.166721f));
     CrateShaderProgram->SetUniform1F("mat.shininess", 0.2f);
-
+	CrateShaderProgram->SetUniform1("mat.diffuse", 0);
+    CrateShaderProgram->SetUniform1("mat.specular", 1);
+	CrateShaderProgram->SetUniform3F("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
 
 	auto LightFragShader = shaderBuilder.BuildFragmentShader(boost::filesystem::initial_path() / "Shaders" / "light.fs", "LightFragment");
 	auto LightShaderProgram = shaderBuilder.BuildShaderProgram(VertexShader, LightFragShader, "LightProgram");
-    auto CrateTexture = shaderBuilder.BuildTexture(boost::filesystem::initial_path() / "Textures" / "container.jpg", "CrateTexture");
+    auto CrateTexture = shaderBuilder.BuildTexture(boost::filesystem::initial_path() / "Textures" / "container2.png", "CrateTexture");
+    auto CrateTextureSpec = shaderBuilder.BuildTexture(boost::filesystem::initial_path() / "Textures" / "container2_specular.png", "CrateTextureSpec");
     // End of Shader Setup
 
 
@@ -121,16 +121,17 @@ int main()
     model.SetPosition(0.0f, 0.0f, -2.0f);
 	model.SetShaderProgram(ShaderProgramPool["CrateProgram"]);
 	model.SetTexture("CrateTexture");
+	model.SetTexture("CrateTextureSpec");
 
     Model LightBox("BoxStd2.obx");
-    LightBox.SetPosition(3.0f, 0.0f, 1.0f);
+    LightBox.SetPosition(1.0f, 5.0f, 1.5f);
 	LightBox.SetShaderProgram(ShaderProgramPool["LightProgram"]);
 
     Scene scene;
     scene.AddModel(LightBox);
     scene.AddModel(model);
     scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(1.0f, 0.0f, 1.0f), "lightcolor");
-    scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(LightBox.GetModelMatrix()[3]), "lightPos");
+    //scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(LightBox.GetModelMatrix()[3]), "lightPos");
     scene.AddGlobalUniform("4FV", std::make_shared<glm::mat4>(model.GetProjectionMatrix()), "projection");
 	scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(0.2f, 0.2f, 0.2f), "light.ambient");
 	scene.AddGlobalUniform("3F", std::make_shared<glm::vec3>(0.5f, 0.5f, 0.5f), "light.diffuse");

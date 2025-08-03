@@ -21,9 +21,9 @@
 
 class Texture
 {
-	unsigned char* RawData;
-	int Width, Height, Channels;
-	unsigned int TextureID;
+	unsigned char* RawData = nullptr;
+	int Width = 1, Height = -1, Channels = -1;
+	unsigned int TextureID = -1;
 
 public:
 	Texture(boost::filesystem::path ImagePath)
@@ -35,9 +35,14 @@ public:
 		glBindTexture(GL_TEXTURE_2D, TextureID);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData);
+
+		if (Channels == 3)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData);
+		else if (Channels == 4)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
+
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -51,6 +56,13 @@ public:
 
 	void Bind() const
 	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, TextureID);
+	}
+
+	void Bind(int TextureUnit) const
+	{
+		glActiveTexture(GL_TEXTURE0 + TextureUnit);
 		glBindTexture(GL_TEXTURE_2D, TextureID);
 	}
 
@@ -77,7 +89,7 @@ class VertexShader
 		ErrorCheck();
 	}
 
-	void ErrorCheck()
+	void ErrorCheck() const
 	{
 		int  success;
 		char infoLog[512];
@@ -108,7 +120,7 @@ public:
 		return ShaderCode;
 	}
 
-	int GetShaderLocation()
+	int GetShaderLocation() const
 	{
 		return VertexShaderLocation;
 	}
@@ -131,7 +143,7 @@ class FragmentShader
 		ErrorCheck();
 	}
 
-	void ErrorCheck()
+	void ErrorCheck() const
 	{
 		int  success;
 		char infoLog[512];
@@ -161,7 +173,7 @@ public:
 		return ShaderCode;
 	}
 
-	int GetShaderLocation()
+	int GetShaderLocation() const
 	{
 		return FragmentShaderLocation;
 	}
@@ -186,7 +198,7 @@ class ShaderProgram
 		ErrorCheck();
 	}
 
-	void ErrorCheck()
+	void ErrorCheck() const
 	{
 		int  success;
 		char infoLog[512];
@@ -225,22 +237,28 @@ public:
 		return InternalFragShader;
 	}
 
-	inline void SetUniform4FV(std::string Location, const float* Value)
+	inline void SetUniform4FV(std::string Location, const float* Value) const
 	{
 		int LocationID = glGetUniformLocation(ProgramID, Location.c_str());
 		glUniformMatrix4fv(LocationID, 1, GL_FALSE, Value);
 	}
 
-	inline void SetUniform3F(std::string Location, glm::vec3 Value)
+	inline void SetUniform3F(std::string Location, glm::vec3 Value) const
 	{
 		int LocationID = glGetUniformLocation(ProgramID, Location.c_str());
 		glUniform3f(LocationID, Value.x, Value.y, Value.z);
 	}
 
-	inline void SetUniform1F(std::string Location, float Value)
+	inline void SetUniform1F(std::string Location, float Value) const
 	{
 		int LocationID = glGetUniformLocation(ProgramID, Location.c_str());
 		glUniform1f(LocationID, Value);
+	}
+
+	inline void SetUniform1(std::string Location, int Value) const
+	{
+		int LocationID = glGetUniformLocation(ProgramID, Location.c_str());
+		glUniform1i(LocationID, Value);
 	}
 
 	inline int GetProgramID() const

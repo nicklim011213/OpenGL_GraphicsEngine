@@ -14,7 +14,7 @@ void Model::ReadFile(std::string FilePath, RawModel& RawModelData)
 	boost::algorithm::replace_all(FileContents, "\r\n", "\n");
 	boost::algorithm::split(lines, FileContents, boost::is_any_of("\n"));
 
-	for (auto line : lines)
+	for (std::string line : lines)
 	{
 		if (line[0] == '@')
 		{
@@ -61,9 +61,9 @@ void Model::ReadFile(std::string FilePath, RawModel& RawModelData)
 					break;
 				}
 			}
-			for (int index = Temp.size() - 1; index >= 0; --index)
+			for (auto i = Temp.rbegin(); i != Temp.rend(); ++i)
 			{
-				RawModelData.AddVertex(Temp[index]);
+				RawModelData.AddVertex(*i);
 			}
 		}
 		else if (line[0] == '$')
@@ -71,7 +71,7 @@ void Model::ReadFile(std::string FilePath, RawModel& RawModelData)
 			line = line.substr(1);
 			std::vector<std::string> parts;
 			boost::algorithm::split(parts, line, boost::is_any_of(","));
-			for (auto part : parts)
+			for (std::string part : parts)
 			{
 				int Index = boost::lexical_cast<int>(part);
 				RawModelData.AddIndex(Index);
